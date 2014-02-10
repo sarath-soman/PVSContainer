@@ -8,62 +8,62 @@ Example
 
 Class Hello:
 
-package com.pvs.test.greetings;
+    package com.pvs.test.greetings;
 
-public class Hello {
+     public class Hello {
 	
 	public void sayHello(){
 		System.out.println("Hello");
 	}
 	
-}
+    }
 
 Class GoodBye:
 
-package com.pvs.test.greetings;
+    package com.pvs.test.greetings;
 
-import org.dic.core.annotation.Instance;
+    import org.dic.core.annotation.Instance;
 
-@Instance(name = "goodBye")
-public class GoodBye {
+    @Instance(name = "goodBye")
+    public class GoodBye {
 	
 	public void sayGoodBye(){
 		System.out.println("Good Bye");
 	}
 	
-}
+    }
 
 
 Class BeanConfiguration:
 
-package com.pvs.test.conf;
+    package com.pvs.test.conf;
 
-import org.dic.core.annotation.Bean;
-import org.dic.core.annotation.Configuration;
+    import org.dic.core.annotation.Bean;
+    import org.dic.core.annotation.Configuration;
 
-import com.pvs.test.greetings.Hello;
+    import com.pvs.test.greetings.Hello;
 
-@Configuration
-public class BeanConfiguration {
+    @Configuration
+    public class BeanConfiguration {
 
 	@Bean(name = "hello")
 	public Hello getHello(){
 		return new Hello();
 	}
 	
-}
+    } 
 
 
 Class Test:
 
-package com.pvs.test;
+    package com.pvs.test;
 
-import org.dic.core.InstanceFactory;
+    import org.dic.core.InstanceFactory;
+     
+    import com.pvs.test.greetings.GoodBye;
+    import com.pvs.test.greetings.Hello;
 
-import com.pvs.test.greetings.GoodBye;
-import com.pvs.test.greetings.Hello;
-
-public class Test {
+    public class Test {
 
 	public static void main(String[] args) {
 		String packageToScan = "com.pvs.test";
@@ -74,5 +74,5 @@ public class Test {
 		goodBye.sayGoodBye();
 	}
 
-}
+    }
 
