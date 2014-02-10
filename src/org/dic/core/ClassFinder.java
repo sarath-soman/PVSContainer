@@ -13,8 +13,8 @@ import java.util.List;
  */
 public class ClassFinder {
 
-	private List<String> classNames = new ArrayList<>();	
-	private List<Class<?>> classes = new LinkedList<>();	
+	private List<String> classNames = new ArrayList<String>();	
+	private List<Class<?>> classes = new LinkedList<Class<?>>();	
 
 	public ClassFinder(String packageName) {
 		init(packageName);
