@@ -83,3 +83,52 @@ Hello
 
 Good Bye
 
+Example 2:
+Injecting instance of Hello in GoodBye Class
+
+GoodBye class:
+
+    package com.pvs.test.greetings;
+
+    import org.dic.core.annotation.Inject;
+    import org.dic.core.annotation.Instance;
+
+    @Instance(name = "goodBye")
+    public class GoodBye {
+	
+	@Inject
+	protected Hello hello;
+	
+	public void sayGoodBye(){
+		System.out.println("Good Bye");
+		hello.sayHello();
+	}
+	
+    }
+
+
+Test Class :
+
+    package com.pvs.test;
+
+    import org.dic.core.InstanceFactory;
+
+    import com.pvs.test.greetings.GoodBye;
+
+    public class Test {
+
+	public static void main(String[] args) {
+		String packageToScan = "com.pvs.test";
+		InstanceFactory factory = new InstanceFactory(packageToScan);		
+		GoodBye goodBye = (GoodBye) factory.getInstance("goodBye");		
+		goodBye.sayGoodBye();
+	}
+
+   }
+
+
+Output:
+
+Good Bye
+
+Hello
