@@ -76,3 +76,9 @@ Class Test:
 
     }
 
+
+Output:
+
+Hello
+Good Bye
+
