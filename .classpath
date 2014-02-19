@@ -2,5 +2,6 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
+	<classpathentry kind="lib" path="D:/Development Setups/Platform Independent Libraries/Java/asm-4.2/lib/asm-4.2.jar" sourcepath="D:/Development Setups/Platform Independent Libraries/Java/asm-4.2/org/objectweb"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

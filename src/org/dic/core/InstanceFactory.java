@@ -1,217 +1,158 @@
 package org.dic.core;
 
-import java.lang.annotation.Annotation;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 
 import org.dic.core.annotation.Bean;
-import org.dic.core.annotation.Configuration;
 import org.dic.core.annotation.Inject;
-import org.dic.core.annotation.Instance;
+import org.objectweb.asm.ClassReader;
 
 /**
- * Creates Instances 
+ * Instance Builder Class
  * @author Sarath
  *
  */
-public class InstanceFactory {
+public class InstanceFactory{
 
-	private String packageToScan = "com";
-	private ClassFinder classFinder;
-	private List<Class<?>> configurationClasses = new LinkedList<Class<?>>();
-	private Map<String, Class<?>> instanceClasses = new HashMap<String, Class<?>>();
-	private Map<String, Method> configurationBeans = new HashMap<String, Method>();
-	private Map<String, Object> instances = new HashMap<String, Object>();
+	private Beans beans;
+	private String packageToScan;
 
-	/**
-	 * Instantiating this constructor causes the packageToScan to
-	 *  be "com" by Default
-	 */
-	public InstanceFactory() {
-		classFinder = new ClassFinder(getPackageToScan());
-		init();
-	}
-	
-	/**
-	 * Use this constructor to set the package that are to be scanned by the 
-	 * container
-	 * @param packageToScan
-	 */
 	public InstanceFactory(String packageToScan) {
-		setPackageToScan(packageToScan);
-		classFinder = new ClassFinder(getPackageToScan());
+		this.packageToScan = packageToScan;
+		beans = new Beans();
 		init();
 	}
 
 	/**
-	 * Calls methods feedClasses() and feedConfigurationBeans()
+	 * Initializes the ClassFinder and feeds the classes to ClassReaders
 	 */
-	private void init() {		
-		feedClasses();
-		feedConfigurationBeans();		
-	}
-
-	/**
-	 * Iterated through the classes fetched by ClassFinder finds
-	 * the annotations on them then feeds the annotations and class to feedClass()
-	 */
-	private void feedClasses() {
-		for (Class<?> c : classFinder.getClasses()) {
-			Annotation[] annotations = c.getAnnotations();
-			feedClass(annotations, c);
-		}
-	}
-
-	/**
-	 * Iterated through the annotations and stores class to appropriate locations
-	 * @param annotations
-	 * @param c
-	 */
-	private void feedClass(Annotation[] annotations, Class<?> c) {
-		for (Annotation annotation : annotations) {
-			if (annotation instanceof Configuration) {				
-				configurationClasses.add(c);
-			} else if (annotation instanceof Instance) {
-				Instance instance = (Instance) annotation;
-				String instanceName = instance.name();
-				instanceClasses.put(instanceName, c);
+	private void init() {
+		ClassFinder finder = new ClassFinder(packageToScan);
+		for(String className : finder.getClassNames()){
+			try {
+				ClassReader reader = new ClassReader(className);
+				AnnotationClassVisitor classVisitor = new AnnotationClassVisitor(beans);
+				reader.accept(classVisitor, 0);
+			} catch (IOException e) {				
+				e.printStackTrace();
+				throw new RuntimeException("Initialization error");
 			}
 		}
-	}
-
+	}	
+		
 	/**
-	 * Iterates through Configuration Classes and feeds them one by one to 
-	 * feedConfigurationBean()
+	 * Returns an instance of the given name
+	 * @param beanName
+	 * @return Instance 
 	 */
-	private void feedConfigurationBeans() {
-		for (Class<?> configuration : configurationClasses) {			
-			feedConfigurationBean(configuration);
-		}
-	}
-
-	/**
-	 * Fetches the methods annotated with Bean and stores them
-	 * @param c
-	 */
-	private void feedConfigurationBean(Class<?> c) {
-		Method[] methods = c.getDeclaredMethods();
-		for (Method method : methods) {
-			Annotation annotation = method.getAnnotation(Bean.class);
-			if (annotation != null) {
-				Bean bean = (Bean) annotation;
-				String beanName = bean.name();
-				configurationBeans.put(beanName, method);
-			}
-		}
-	}
-
-	/**
-	 * Fetches the instance requested
-	 * @param instanceName
-	 * @return
-	 */
-	public Object getInstance(String instanceName) {
-		Object instance = instances.get(instanceName);
-		if(instance == null) {
-			if (configurationBeans.containsKey(instanceName)) {
-				return getInstanceFromConfiguration(instanceName);
-			} else {
-				return getInstanceFromAnnotatedClasses(instanceName);
-			}
+	public Object getInstance(String beanName) {
+		if (beans.getInstances().containsKey(beanName)) {
+			return beans.getInstances().get(beanName);
+		} else if (beans.getConfigurationBeans().containsKey(beanName)) {
+			makeConfigurationBeanInstance(beanName);
+			return getInstance(beanName);
+		} else if (beans.getInstanceClassNames().containsKey(beanName)) {
+			makeAnnotatedClassInstance(beanName);
+			return getInstance(beanName);
 		} else {
-			return instance;
+			throw new RuntimeException("Bean not found exception");
 		}
 	}
 
 	/**
-	 * Get instance from the configuration class (from methods Annotated with Bean)
-	 * @param instanceName
-	 * @return
+	 * Creates an Instance of the given name from the Configuration classes
+	 * (It finds the method annotated with Bean annotation with bean name = 
+	 * given beanName and invokes the method which will return the instance)
+	 * @param beanName
 	 */
-	private Object getInstanceFromConfiguration(String instanceName) {
-		Object returnValue = null;
-		Method method = configurationBeans.get(instanceName);
+	private void makeConfigurationBeanInstance(String beanName) {
 		try {
-			Object object = method.getDeclaringClass().newInstance();
-			returnValue = method.invoke(object, null);
-			instances.put(instanceName, returnValue);
-			return returnValue;
+			Class<?> configuration = Class.forName(beans
+					.getConfigurationBeans().get(beanName));
+			Method[] methods = configuration.getDeclaredMethods();
+			for (Method method : methods) {
+				Bean bean = method.getAnnotation(Bean.class);
+				if (bean != null) {
+					if (bean.name().equals(beanName)) {
+						Object object = configuration.newInstance();
+						Object instance = method.invoke(object, null);
+						beans.getInstances().put(beanName, instance);
+					}
+				}
+			}
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+			throw new RuntimeException("Bean not found exception");
 		} catch (InstantiationException e) {
 			e.printStackTrace();
-			return returnValue;
+			throw new RuntimeException("Bean not found exception");
 		} catch (IllegalAccessException e) {
 			e.printStackTrace();
-			return returnValue;
+			throw new RuntimeException("Bean not found exception");
 		} catch (IllegalArgumentException e) {
 			e.printStackTrace();
-			return returnValue;
+			throw new RuntimeException("Bean not found exception");
 		} catch (InvocationTargetException e) {
 			e.printStackTrace();
-			return returnValue;
+			throw new RuntimeException("Bean not found exception");
 		}
 	}
 
 	/**
-	 * Instance of class annotated with Instance annotation
-	 * @param instanceName
-	 * @return
+	 * Creates an Instance of the class with the Instance annotation. 
+	 * @param beanName
 	 */
-	private Object getInstanceFromAnnotatedClasses(String instanceName) {		
+	private void makeAnnotatedClassInstance(String beanName) {
 		try {
-			Object object = getInstance(instanceClasses.get(instanceName));
-			instances.put(instanceName, object);
-			return object;
-		} catch (InstantiationException e) {			
+			Class<?> annotatedClass = Class.forName(beans.getInstanceClassNames()
+					.get(beanName));
+			Object instance = getInstance(annotatedClass);
+			beans.getInstances().put(beanName, instance);
+		} catch (ClassNotFoundException e) {			
 			e.printStackTrace();
-			return null;
+			throw new RuntimeException("Bean not found exception");
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+			throw new RuntimeException("Bean not found exception");
 		} catch (IllegalAccessException e) {			
 			e.printStackTrace();
-			return null;
+			throw new RuntimeException("Bean not found exception");
+		} catch (InstantiationException e) {			
+			e.printStackTrace();
+			throw new RuntimeException("Bean not found exception");
 		}
 	}
 
 	/**
-	 * Analyzes the fields that are to be Injected by Container and generates
-	 * Object accordingly
-	 * @param c
+	 * Returns the Instance of the class annotated with Instance annotation
+	 * Fields of the class are searched for Inject annotation and dependencies
+	 * are injected to the fields annotated with the Inject annotation
+	 * @param annotatedClass
 	 * @return
-	 * @throws InstantiationException
+	 * @throws IllegalArgumentException
 	 * @throws IllegalAccessException
+	 * @throws InstantiationException
 	 */
-	private Object getInstance(Class<?> c) throws InstantiationException,
-			IllegalAccessException {
-		Object object = c.newInstance();
-		Field[] fields = c.getDeclaredFields();
-		for (Field field : fields) {
-			Annotation annotation = field.getAnnotation(Inject.class);
-			if (annotation != null) {				
-				Object value = instances.get(field.getName());
-				if (value == null) {
-					Object typesInstance = getInstance(field.getType());
+	private Object getInstance(Class<?> annotatedClass) throws IllegalArgumentException, IllegalAccessException, InstantiationException {
+		Object instance = annotatedClass.newInstance();
+		Field[] fields = annotatedClass.getDeclaredFields();
+		for(Field field : fields){
+			Inject inject = field.getAnnotation(Inject.class);
+			if(inject != null){
+				Object object = getInstance(field.getName());				
+				if(object != null){					
 					field.setAccessible(true);
-					field.set(object, typesInstance);
+					field.set(instance, object);
 				} else {
+					Object fieldsTypesInstance = getInstance(field.getType());
 					field.setAccessible(true);
-					field.set(object, value);
+					field.set(instance, fieldsTypesInstance);
 				}
 			}
 		}
-		return object;
-	}
-	
-	//Getters and Setters
-
-	public String getPackageToScan() {
-		return packageToScan;
-	}
-
-	public void setPackageToScan(String packageToScan) {
-		this.packageToScan = packageToScan;
-	}
+		return instance;
+	}	
 
 }

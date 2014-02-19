@@ -3,7 +3,6 @@ package org.dic.core;
 import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -13,8 +12,7 @@ import java.util.List;
  */
 public class ClassFinder {
 
-	private List<String> classNames = new ArrayList<String>();	
-	private List<Class<?>> classes = new LinkedList<Class<?>>();	
+	private List<String> classNames = new ArrayList<String>();		
 
 	public ClassFinder(String packageName) {
 		init(packageName);
@@ -26,8 +24,7 @@ public class ClassFinder {
 	private void init(String packageName) {		
 		URL root = Thread.currentThread().getContextClassLoader()
 				.getResource(packageName.replace(".", "/"));	
-		feedClassNames(new File(root.getFile()), packageName);		
-		feedClasses();
+		feedClassNames(new File(root.getFile()), packageName);				
 	}
 
 	/**
@@ -53,27 +50,8 @@ public class ClassFinder {
 		}
 	}
 
-	/**
-	 * Feeds the classes to the list
-	 */
-	public void feedClasses() {
-		for(String className : classNames) {
-			try {
-				getClasses().add(Class.forName(className));
-			} catch (ClassNotFoundException e) {				
-				e.printStackTrace();
-			}
-		}
+	public List<String> getClassNames() {
+		return classNames;
 	}
 
-	//Getters and Setters
-
-	public List<Class<?>> getClasses() {
-		return classes;
-	}
-
-	public void setClasses(List<Class<?>> classes) {
-		this.classes = classes;
-	}	
-	
 }
