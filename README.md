@@ -6,71 +6,66 @@ Example
 
 Class Hello:
 
-package com.pvs.test.greetings;
+    package com.pvs.test.greetings;
 
- public class Hello {
-
-public void sayHello(){
-    System.out.println("Hello");
-}
-
-}
+    public class Hello {
+        public void sayHello(){
+            System.out.println("Hello");
+        }
+    }
 
 Class GoodBye:
 
-package com.pvs.test.greetings;
+    package com.pvs.test.greetings;
 
-import org.dic.core.annotation.Instance;
+    import org.dic.core.annotation.Instance;
 
-@Instance(name = "goodBye")
-public class GoodBye {
+    @Instance(name = "goodBye")
+    public class GoodBye {
 
-public void sayGoodBye(){
-    System.out.println("Good Bye");
-}
-
-}
+        public void sayGoodBye(){
+            System.out.println("Good Bye");
+        }
+    }
 
 Class BeanConfiguration:
 
-package com.pvs.test.conf;
+    package com.pvs.test.conf;
 
-import org.dic.core.annotation.Bean;
-import org.dic.core.annotation.Configuration;
+    import org.dic.core.annotation.Bean;
+    import org.dic.core.annotation.Configuration;
 
-import com.pvs.test.greetings.Hello;
+    import com.pvs.test.greetings.Hello;
 
-@Configuration
-public class BeanConfiguration {
+    @Configuration
+    public class BeanConfiguration {
 
-@Bean(name = "hello")
-public Hello getHello(){
-    return new Hello();
-}
-
-} 
+        @Bean(name = "hello")
+        public Hello getHello(){
+            return new Hello();
+        }
+    } 
 
 Class Test:
 
-package com.pvs.test;
+    package com.pvs.test;
 
-import org.dic.core.InstanceFactory;
+    import org.dic.core.InstanceFactory;
 
-import com.pvs.test.greetings.GoodBye;
-import com.pvs.test.greetings.Hello;
+    import com.pvs.test.greetings.GoodBye;
+    import com.pvs.test.greetings.Hello;
 
-public class Test {
+    public class Test {
 
-public static void main(String[] args) {
-    String packageToScan = "com.pvs.test";
-    InstanceFactory factory = new InstanceFactory(packageToScan);
-    Hello hello = (Hello) factory.getInstance("hello");
-    GoodBye goodBye = (GoodBye) factory.getInstance("goodBye");
-    hello.sayHello();
-    goodBye.sayGoodBye();
-}
-
-}
+        public static void main(String[] args) {
+            String packageToScan = "com.pvs.test";
+            InstanceFactory factory = new InstanceFactory(packageToScan);
+            Hello hello = (Hello) factory.getInstance("hello");
+            GoodBye goodBye = (GoodBye) factory.getInstance("goodBye");
+            hello.sayHello();
+            goodBye.sayGoodBye();
+        }
+    }
 
 Output:
 
@@ -82,42 +77,40 @@ Example 2: Injecting instance of Hello in GoodBye Class
 
 GoodBye class:
 
-package com.pvs.test.greetings;
+    package com.pvs.test.greetings;
 
-import org.dic.core.annotation.Inject;
-import org.dic.core.annotation.Instance;
+    import org.dic.core.annotation.Inject;
+    import org.dic.core.annotation.Instance;
 
-@Instance(name = "goodBye")
-public class GoodBye {
+    @Instance(name = "goodBye")
+    public class GoodBye {
 
-@Inject
-protected Hello hello;
+        @Inject
+        protected Hello hello;
 
-public void sayGoodBye(){
-    System.out.println("Good Bye");
-    hello.sayHello();
-}
-
-}
+        public void sayGoodBye(){
+            System.out.println("Good Bye");
+            hello.sayHello();
+        }
+    }
 
 Test Class :
 
-package com.pvs.test;
+    package com.pvs.test;
 
-import org.dic.core.InstanceFactory;
+    import org.dic.core.InstanceFactory;
 
-import com.pvs.test.greetings.GoodBye;
+    import com.pvs.test.greetings.GoodBye;
 
-public class Test {
+    public class Test {
 
-public static void main(String[] args) {
-    String packageToScan = "com.pvs.test";
-    InstanceFactory factory = new InstanceFactory(packageToScan);       
-    GoodBye goodBye = (GoodBye) factory.getInstance("goodBye");     
-    goodBye.sayGoodBye();
-}
-
-}
+        public static void main(String[] args) {
+            String packageToScan = "com.pvs.test";
+            InstanceFactory factory = new InstanceFactory(packageToScan);       
+            GoodBye goodBye = (GoodBye) factory.getInstance("goodBye");     
+            goodBye.sayGoodBye();
+        }
+    }
 
 Output:
 
